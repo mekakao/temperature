@@ -626,7 +626,7 @@
       const autoMode = detectSeason() === "summer" ? "여름" : "겨울";
 
       document.getElementById("summaryText").innerText =
-        `현재 날짜 기준 자동 감지 계절은 ${autoMode}입니다. 필요 시 계절을 직접 변경할 수 있습니다.`;
+        `지금 계절은 ${autoMode}입니다.`;
 
       document.getElementById("envLabel").innerText = config.envLabel;
       document.getElementById("envInput").placeholder = config.envPlaceholder;
