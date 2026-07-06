@@ -13,6 +13,7 @@
       --muted: #6b7280;
       --line: #d1d5db;
       --blue: #3b82f6;
+
       --normal: #6b7280;
       --interest: #38bdf8;
       --caution: #facc15;
@@ -90,8 +91,12 @@
       background: #fff;
       color: var(--text);
       font-size: 17px;
-      text-align: right;
       outline: none;
+    }
+
+    .field input {
+      text-align: right;
+      font-weight: 700;
     }
 
     .field select {
@@ -160,7 +165,7 @@
     }
 
     .interest {
-      color: var(--interest);
+      color: #0891b2;
     }
 
     .caution {
@@ -240,6 +245,14 @@
       border-radius: 50%;
     }
 
+    .mobile-range-note {
+      display: none;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
     .table-box {
       overflow: auto;
       background: #fff;
@@ -271,24 +284,49 @@
       font-weight: 900;
     }
 
-    thead th {
+    thead tr:first-child th {
       position: sticky;
       top: 0;
-      z-index: 3;
+      z-index: 5;
+    }
+
+    thead tr:nth-child(2) th {
+      position: sticky;
+      top: 37px;
+      z-index: 4;
     }
 
     .corner {
+      position: sticky;
+      left: 0;
+      z-index: 8 !important;
       background: #e5e7eb;
     }
 
     .side-title {
+      position: sticky;
+      left: 0;
+      z-index: 3;
       background: #e5e7eb;
+      font-weight: 900;
+      min-width: 58px;
+    }
+
+    .row-head {
+      position: sticky;
+      left: 58px;
+      z-index: 3;
+      background: #f3f4f6;
       font-weight: 900;
     }
 
     td {
       background: #fff;
       font-weight: 700;
+    }
+
+    td.cell-normal {
+      background: #fff;
     }
 
     td.cell-interest {
@@ -344,6 +382,39 @@
       .result-value {
         font-size: 28px;
       }
+
+      .table-box {
+        max-height: none;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        min-width: 100%;
+        font-size: 12.5px;
+      }
+
+      th,
+      td {
+        min-width: 48px;
+        padding: 8px 6px;
+      }
+
+      thead tr:nth-child(2) th {
+        top: 35px;
+      }
+
+      .side-title {
+        min-width: 48px;
+      }
+
+      .row-head {
+        left: 48px;
+      }
+
+      .mobile-range-note {
+        display: block;
+      }
     }
   </style>
 </head>
@@ -367,12 +438,24 @@
 
         <div class="field">
           <label for="tempInput">온도(℃)</label>
-          <input type="number" id="tempInput" step="0.1" inputmode="decimal" placeholder="예: 30.7" />
+          <input
+            type="number"
+            id="tempInput"
+            step="0.1"
+            inputmode="decimal"
+            placeholder="예: 30.7"
+          />
         </div>
 
         <div class="field">
           <label for="envInput" id="envLabel">습도(%)</label>
-          <input type="number" id="envInput" step="0.1" inputmode="decimal" placeholder="예: 60" />
+          <input
+            type="number"
+            id="envInput"
+            step="0.1"
+            inputmode="decimal"
+            placeholder="예: 60"
+          />
         </div>
       </div>
 
@@ -405,6 +488,8 @@
 
     let mode = "";
     let config = {};
+    let focusedRowIndex = null;
+    let focusedColIndex = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       mode = detectSeason();
@@ -422,6 +507,9 @@
         mode = document.getElementById("seasonSelect").value;
         config = getConfig(mode);
 
+        focusedRowIndex = null;
+        focusedColIndex = null;
+
         document.getElementById("envInput").value = "";
 
         renderAll();
@@ -430,6 +518,10 @@
 
       document.getElementById("tempInput").addEventListener("input", updateResult);
       document.getElementById("envInput").addEventListener("input", updateResult);
+
+      window.addEventListener("resize", () => {
+        renderTable(focusedRowIndex, focusedColIndex);
+      });
     }
 
     function detectSeason() {
@@ -481,7 +573,7 @@
       document.getElementById("envInput").placeholder = config.envPlaceholder;
 
       renderLegend();
-      renderTable();
+      renderTable(focusedRowIndex, focusedColIndex);
 
       document.getElementById("sourceText").innerHTML =
         `표 생성일: ${formatDate(now)} · 자료 기준: ` +
@@ -513,37 +605,63 @@
       `).join("");
     }
 
-    function renderTable() {
+    function renderTable(focusRowIndex = null, focusColIndex = null) {
+      const isMobile = isMobileView();
+
+      const rowIndexes = isMobile
+        ? getVisibleIndexes(config.rowValues.length, focusRowIndex, 7)
+        : getVisibleIndexes(config.rowValues.length, null, config.rowValues.length);
+
+      const colIndexes = isMobile
+        ? getVisibleIndexes(config.tempValues.length, focusColIndex, 5)
+        : getVisibleIndexes(config.tempValues.length, null, config.tempValues.length);
+
+      const mobileNote = isMobile
+        ? `<p class="mobile-range-note">${
+            focusRowIndex !== null && focusColIndex !== null
+              ? "입력값과 가장 가까운 체감온도 칸을 중심으로 주변 구간만 표시합니다."
+              : "모바일에서는 보기 편하도록 일부 구간만 표시합니다. 값을 입력하면 해당 구간으로 자동 이동합니다."
+          }</p>`
+        : "";
+
       let html = `
+        ${mobileNote}
         <table>
           <thead>
             <tr>
               <th class="corner" rowspan="2" colspan="2">구분</th>
-              <th colspan="${config.tempValues.length}">기온(℃)</th>
+              <th colspan="${colIndexes.length}">기온(℃)</th>
             </tr>
             <tr>
-              ${config.tempValues.map(t => `<th>${formatNumber(t)}</th>`).join("")}
+              ${colIndexes.map(colIndex => `<th>${formatNumber(config.tempValues[colIndex])}</th>`).join("")}
             </tr>
           </thead>
           <tbody>
       `;
 
-      config.rowValues.forEach((rowValue, rowIndex) => {
+      rowIndexes.forEach((rowIndex, visibleRowIndex) => {
+        const rowValue = config.rowValues[rowIndex];
+
         html += `<tr>`;
 
-        if (rowIndex === 0) {
-          html += `<th class="side-title" rowspan="${config.rowValues.length}">${config.envLabel}</th>`;
+        if (visibleRowIndex === 0) {
+          html += `<th class="side-title" rowspan="${rowIndexes.length}">${config.envLabel}</th>`;
         }
 
-        html += `<th>${formatNumber(rowValue)}</th>`;
+        html += `<th class="row-head">${formatNumber(rowValue)}</th>`;
 
-        config.tempValues.forEach((tempValue, colIndex) => {
+        colIndexes.forEach((colIndex) => {
+          const tempValue = config.tempValues[colIndex];
           const apparent = calcApparentTemp(tempValue, rowValue);
           const level = getRiskLevel(apparent);
+          const selectedClass =
+            rowIndex === focusRowIndex && colIndex === focusColIndex
+              ? " selected"
+              : "";
 
           html += `
             <td
-              class="cell-${level.key}"
+              class="cell-${level.key}${selectedClass}"
               data-row-index="${rowIndex}"
               data-col-index="${colIndex}"
             >
@@ -564,23 +682,22 @@
     }
 
     function updateResult() {
-      clearSelectedCell();
-
       const temp = parseFloat(document.getElementById("tempInput").value);
       const env = parseFloat(document.getElementById("envInput").value);
 
-      const resultCard = document.getElementById("resultCard");
-      const resultValue = document.getElementById("resultValue");
-      const levelText = document.getElementById("levelText");
-      const levelDot = document.getElementById("levelDot");
-      const levelDesc = document.getElementById("levelDesc");
-
       if (Number.isNaN(temp) || Number.isNaN(env)) {
+        focusedRowIndex = null;
+        focusedColIndex = null;
+
+        renderTable(focusedRowIndex, focusedColIndex);
         setResultState("normal", "-", "입력 대기", "온도와 값을 입력하면 자동으로 계산됩니다.");
         return;
       }
 
-      highlightNearestCell(temp, env);
+      focusedColIndex = findNearestIndex(config.tempValues, temp);
+      focusedRowIndex = findNearestIndex(config.rowValues, env);
+
+      renderTable(focusedRowIndex, focusedColIndex);
 
       if (mode === "summer" && (env < 0 || env > 100)) {
         setResultState("warning", "확인 필요", "입력값 확인", "습도는 0~100% 범위로 입력해 주세요.");
@@ -698,23 +815,37 @@
       return { key: "interest", label: "관심" };
     }
 
-    function clearSelectedCell() {
-      document.querySelectorAll("td.selected").forEach(cell => {
-        cell.classList.remove("selected");
-      });
+    function isMobileView() {
+      return window.matchMedia("(max-width: 700px)").matches;
     }
 
-    function highlightNearestCell(temp, env) {
-      const colIndex = findNearestIndex(config.tempValues, temp);
-      const rowIndex = findNearestIndex(config.rowValues, env);
-
-      const targetCell = document.querySelector(
-        `td[data-row-index="${rowIndex}"][data-col-index="${colIndex}"]`
-      );
-
-      if (targetCell) {
-        targetCell.classList.add("selected");
+    function getVisibleIndexes(totalLength, focusIndex, visibleCount) {
+      if (visibleCount >= totalLength) {
+        return Array.from({ length: totalLength }, (_, index) => index);
       }
+
+      if (focusIndex === null || focusIndex === undefined) {
+        return Array.from({ length: visibleCount }, (_, index) => index);
+      }
+
+      const half = Math.floor(visibleCount / 2);
+      let start = focusIndex - half;
+      let end = start + visibleCount - 1;
+
+      if (start < 0) {
+        start = 0;
+        end = visibleCount - 1;
+      }
+
+      if (end >= totalLength) {
+        end = totalLength - 1;
+        start = end - visibleCount + 1;
+      }
+
+      return Array.from(
+        { length: end - start + 1 },
+        (_, index) => start + index
+      );
     }
 
     function findNearestIndex(values, target) {
