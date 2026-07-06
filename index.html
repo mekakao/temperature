@@ -366,56 +366,81 @@
       text-decoration: none;
     }
 
-    @media (max-width: 700px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 0.75fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
 
-      .calculator-card {
-        padding: 16px;
-      }
+  .field label {
+    margin-bottom: 5px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
 
-      h1 {
-        font-size: 22px;
-      }
+  .field input,
+  .field select {
+    height: 44px;
+    padding: 0 7px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
 
-      .result-value {
-        font-size: 28px;
-      }
+  .field input {
+    text-align: right;
+  }
 
-      .table-box {
-        max-height: none;
-        overflow: auto;
-      }
+  .field select {
+    text-align: left;
+  }
 
-      table {
-        width: 100%;
-        min-width: 100%;
-        font-size: 12.5px;
-      }
+  .calculator-card {
+    padding: 14px;
+  }
 
-      th,
-      td {
-        min-width: 48px;
-        padding: 8px 6px;
-      }
+  h1 {
+    font-size: 22px;
+  }
 
-      thead tr:nth-child(2) th {
-        top: 35px;
-      }
+  .result-value {
+    font-size: 28px;
+  }
 
-      .side-title {
-        min-width: 48px;
-      }
+  .table-box {
+    max-height: none;
+    overflow: auto;
+  }
 
-      .row-head {
-        left: 48px;
-      }
+  table {
+    width: 100%;
+    min-width: 100%;
+    font-size: 12.5px;
+  }
 
-      .mobile-range-note {
-        display: block;
-      }
-    }
+  th,
+  td {
+    min-width: 48px;
+    padding: 8px 6px;
+  }
+
+  thead tr:nth-child(2) th {
+    top: 35px;
+  }
+
+  .side-title {
+    min-width: 48px;
+  }
+
+  .row-head {
+    left: 48px;
+  }
+
+  .mobile-range-note {
+    display: block;
+  }
+}
+
   </style>
 </head>
 
